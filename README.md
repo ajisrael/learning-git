@@ -2,7 +2,9 @@
 
 ## Commands
 
-### Create new repo on command line
+### Repository
+
+#### Create new repo on command line
 
 The following is from github itself not the FEM course
 
@@ -14,6 +16,20 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin git@github.com:ajisrael/REPO_NAME.git
 git push -u origin main
+```
+
+### Config
+
+#### Add a key value to git config
+
+```bash
+git config --add --global <key> "<value>"
+```
+
+#### View any value of git config
+
+```bash
+git config --get <key>
 ```
 
 ## Terms
@@ -39,3 +55,9 @@ The git repo, there are some ways to track multiple branches (trees) of a repo b
 ### Remote
 
 A copy of the repo on another machine that you can pull and push to.
+
+### Keys
+
+Keys are in the format: `<section>.<key>`
+`--global` is for all future uses of git and repos
+`user.name` and `user.email` are keys used to create commit tied to author
