@@ -202,6 +202,7 @@ git log --oneline --decorate --graph --parents
 ```
 
 Example Output:
+
 ```
 *   7df8e11 d10ee81 67100a8 (HEAD -> trunk-merge-foo) Merge branch 'foo' into trunk-merge-foo
 |\  
@@ -213,7 +214,17 @@ Example Output:
 * 07dc767 A
 ```
 
-The merge commit has two parents (d10ee81 67100a8 in the example) one from the head of each branch from the merge
+The merge commit has two parents (d10ee81 67100a8 in the example) one from the head of each branch from the merge. This only happens if both branches have diverged. This is called a 3 way merge.
+
+The following example shows what happens when the tip of the `trunk` branch is the base of the deveating branch `bar` (in this case). Notice there is no commit message for the merge. This is called a Fast-forward merge.
+
+```
+* 241c2a0 e768479 (HEAD -> trunk, bar) Y
+* e768479 d10ee81 X
+* d10ee81 08bee70 E
+* 08bee70 07dc767 D
+* 07dc767 A
+```
 
 ## Terms
 
