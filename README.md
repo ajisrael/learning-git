@@ -454,6 +454,18 @@ git pull --rebase
 git config --add --global pull.rebase true
 ```
 
+#### Push
+
+Allows you to update commits/changes from your local branch to a tracked remote branch.
+
+Note: Using `origin` git will automap these for you when you checkout a local branch after setting a remote.
+
+```bash
+git push
+```
+
+Under the hood this is just doing a `fetch` and then a `merge` on the remote repo. The opposite of `pull`.
+
 ## Terms
 
 ### Commit
