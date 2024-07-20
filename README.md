@@ -183,6 +183,12 @@ git branch -d <branch-name>
 
 You can change `-d` to `-D` to --delete --force.
 
+#### List all branches
+
+```bash
+git branch -a
+```
+
 #### Merge branches
 
 Attempting to combine two histories that may or may not have diverged. There is a common commit piont between the two, referred to as the best common ancestor (or "merge base" as defined in the docs).
@@ -273,6 +279,8 @@ d10ee81 E
 08bee70 D
 07dc767 A
 ```
+
+### Commit Management
 
 #### Reflog
 
@@ -368,6 +376,82 @@ NOTE: This will merge all history and diversions if there are commits between th
 
 ```bash
 git cherry-pick <commit-sha>
+```
+
+### Remote Git
+
+#### Remote
+
+Git allows for distributed version control. We can add a remote to a repo with the following command.
+
+Note: It is considered best practice to name the authoritative remote repository `origin`
+      The `uri` can be another repo on your machine, doesn't necessarily have to be a url or ssh
+
+```bash
+git remote add origin <uri>
+```
+
+You can see your remotes and their paths with the following command:
+
+```bash
+git remote -v
+```
+
+#### Fetch
+
+Allows you to fetch the state from the remote repository.
+
+```bash
+git fetch
+```
+
+This updates your refs in `.git/refs/remotes/origin` (or whatever you named your remote) but doesn't merge changes to your local branch.
+You can see this by running `git log` after fetching, to see you don't have commits that are on the remote.
+
+If you do want to see the log of a fetched remote branch you can with the following command:
+
+```bash
+git log <remote-name>/<branch-name>
+```
+
+An example of this would be:
+
+```bash
+git log origin/trunk
+```
+
+To get the changes from the remote, just merge them with a local branch. So for example if you were on your local `trunk` branch you could run the following to update it with the commits from the remote `trunk` branch:
+
+```bash
+git merge origin/trunk
+```
+
+#### Pull
+
+Pull is a convenience that allows you to fetch and merge changes from a remote branch to a local branch. 
+
+```bash
+git pull <remote> <branch>
+```
+
+If you don't specify a remote and local branch it will just use the current branch you're on and it's remote branch it's tracking if it is setup.
+
+To setup tracking run the following command:
+
+```bash
+git branch --set-upstream-to=origin/trunk trunk
+```
+
+Also if you prefer to use rebase instead of merge on your pull you can add the `--rebase` flag to your pull command or change your config:
+
+```bash
+# add flag
+git pull --rebase
+```
+
+```bash
+# update config
+git config --add --global pull.rebase true
 ```
 
 ## Terms
