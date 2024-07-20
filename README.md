@@ -226,6 +226,150 @@ The following example shows what happens when the tip of the `trunk` branch is t
 * 07dc767 A
 ```
 
+#### Rebase
+
+Example setup:
+
+```
+   B --- C                  foo
+ /
+A --- D --- E --- X --- Y   trunk
+```
+
+Rebase allows us to convert that setup to this in a single command:
+
+```
+                            B --- C foo
+                          /
+A --- D --- E --- X --- Y           trunk
+```
+
+So we change branch `foo` to point to `Y` instead of `A`
+
+That is all that rebase does here. It updates the commit where the branch originally points to. This also allows us to do a fast forward merge when we decide to merge foo onto trunk.
+
+What `rebase` does (basic steps):
+1. execute `git rebase <targetbranch>` from `<currentbranch>`
+2. checkout the latest commit on `<targetbranch>`
+3. play one commit at a time from `<currentbranch>`
+4. once finished, will update `<currentbranch>` to the the latest commit of `<targetbranch>`
+
+Note: This does create "new" commits, in that their shas do change as shown below.
+
+Commits before rebase
+```
+67100a8 C
+f8b02df B
+07dc767 A
+```
+
+Commits after rebase
+```
+4a9080f C
+8cc2582 B
+241c2a0 Y
+e768479 X
+d10ee81 E
+08bee70 D
+07dc767 A
+```
+
+#### Reflog
+
+See terms for definition.
+
+Example use case, file recovery:
+
+We create a new branch off of trunk called baz and add a commit that contains a new file called `baz.md`
+
+```bash
+git checkout trunk
+git checkout -b baz
+echo "baz" >> baz.md
+git add .
+git commit -m "baz"
+```
+
+We then go back to trunk and delete the baz branch
+
+```bash
+git checkout trunk
+git branch -D baz
+```
+
+Using `reflog` we can recover our missing file from that branch.
+
+```bash
+git reflog -5 # last 5 logs
+```
+
+This command outputs the following:
+
+```bash
+241c2a0 HEAD@{0}: checkout: moving from baz to trunk
+4a5671b HEAD@{1}: commit: baz
+241c2a0 HEAD@{2}: checkout: moving from trunk to baz
+241c2a0 HEAD@{3}: checkout: moving from foo to trunk
+67100a8 HEAD@{4}: checkout: moving from trunk to foo
+```
+
+So we have the hash `4a5671b` that we can use `git cat-file -p` to follow down to the blob of our missing file.
+
+```bash
+git cat-file -p 4a5671b
+```
+
+Will output:
+
+```bash
+tree c6468b4bafe23dd40eaabda3dcccc6793d015736
+parent 241c2a00972029883d79da5b3229f854f5e8db8c
+author Alex Israels <43039187+ajisrael@users.noreply.github.com> 1721399277 -0400
+committer Alex Israels <43039187+ajisrael@users.noreply.github.com> 1721399277 -0400
+
+baz
+```
+
+So we take the sha from the tree to get to the blobs:
+
+```bash
+git cat-file -p c6468b4bafe23dd40eaabda3dcccc6793d015736
+```
+
+Outputs:
+
+```bash
+100644 blob 2339e24260ba1b42505c8e48636bb4ba2ed52b68    README.md
+100644 blob 16858db7afb62f3e027d8f9379085d3567bcac62    bar.md
+100644 blob 76018072e09c5d31c8c6e3113b8aa0fe625195ca    baz.md
+```
+
+And finally,
+
+```bash
+git cat-file -p 76018072e09c5d31c8c6e3113b8aa0fe625195ca
+```
+
+Gives us the contents of `baz.md`
+
+```bash
+baz
+```
+
+OR you can just merge the sha of the commit
+
+```bash
+git merge 4a5671b
+```
+
+NOTE: This will merge all history and diversions if there are commits between the latest of trunk and the commit you are merging. To just bring in the commit, may want to try cherry picking.
+
+#### Cherry Pick
+
+```bash
+git cherry-pick <commit-sha>
+```
+
 ## Terms
 
 ### Commit
@@ -268,6 +412,22 @@ A file
 
 The commit or commits that bore the current commit
 
+### HEAD
+
+Just a referrence to a commit for the head of the currently checked out branch.
+
+See `.git/HEAD` holds a path to a `ref` that points to a commit
+
+### Reflog
+
+The log of where your HEAD has moved. Logs are stored in `.git/logs/HEAD`
+
+### Cherry Pick
+
+From `man git-cherry-pick`
+
+Given one or more existing commits, apply the change each one introduces, recording a new commit for each. This requires your working tree to be clean (no modifications from the HEAD commit).
+
 ## Tidbits
 
 ### See all files created in `.git` from `git init`
@@ -284,4 +444,3 @@ It is an asyclic graph that happens to be linear.
 Git allows you to store multiples of the same key with different values. This allows for global and local configs without conflict. Resolution depends on first occurance in a file at specific levels (local > global)
 
 When you create a new branch you are creating it at the moment of your current branch. AKA it is part of the current commit, you can see this in `.git/refs/<branch-name>` as the contents of the file of your branch name are the commit from which the branch was created.
-
