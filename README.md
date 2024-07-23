@@ -116,6 +116,12 @@ git log --oneline <branch-name>
 
 You can also append a branch name if you want to see the logs of a different branch than the one you're currently on.
 
+```bash
+git log -S "search"
+```
+
+You can also use the `-S` parameter to search for specific logs
+
 #### Cat-File
 
 Way to inspect files within git's data store
@@ -466,6 +472,210 @@ git push
 
 Under the hood this is just doing a `fetch` and then a `merge` on the remote repo. The opposite of `pull`.
 
+### Conflict Resolution
+
+#### Stash
+
+Stash changes with following command
+
+```bash
+git stash
+```
+
+You can also add a message
+
+```bash
+git stash -m "message"
+```
+
+You can list stashes
+
+```bash
+git stash list
+git stash show [--index <index>]
+```
+
+Pop changes from stash stack with:
+
+```bash
+git stash pop
+```
+
+Or at an index
+
+```bash
+git stash pop --index <index>
+```
+
+#### Merge Conflicts
+
+Merge conflicts occur when there are the same line has diverged two ways in commits.
+
+A new commit needs to be created after resolving the merge conflict.
+
+When you create a merge conflict resolving commit, you will need to push that up to your remote repo to prevent having to deal with merge conflicts in the future.
+
+Example History for when merge conflict resolutions aren't commited:
+
+```bash
+*   9ff2f04 Merge branch 'trunk' of ../hello-git into trunk
+|\  
+| * 5f5215b a change to bar
+* | 68ac697 merged in upstream
+|\| 
+| * 7b0d4a0 A + 1
+* | d308dbe A + 2
+|/  
+* 05c6c28 greatest change
+* 5385c3c upstream change 2
+* 28443b8 upstream change
+* daea46e A remote change
+* 399f77b baz
+* 241c2a0 Y
+* e768479 X
+* d10ee81 E
+* 08bee70 D
+* 07dc767 A
+```
+
+#### Rebase Conflicts
+
+Reminder, to pull with rebase use the following command:
+
+```bash
+git pull --rebase
+```
+
+Here is an example conflict:
+
+```bash
+<<<<<<< HEAD
+A + 3
+=======
+A + 4
+>>>>>>> 2132f47 (change from remote for a wonderful rebase conflict)
+```
+
+Notice that the HEAD is pointing to the upstream change. This is because `rebase` pulls the changes from the remote down and then plays the commits over the new HEAD one at a time.
+So the conflict was introduced by our local commit `2132f47` being played over the new HEAD pointer.
+
+After resolving the conflict we need to add our changes to the index and then continue through the rebase process onto the next commit if there is one:
+
+```bash
+git add .
+git rebase --continue
+```
+
+In this example we chose the upstream's change to resolve the conflict.
+As such, there is no additional change from the perspective of the upstream repo on the file so `git status` doesn't list the previously conflicting file anymore.
+
+Simple history change though:
+
+```bash
+* 4ee5d17 change from remote for a wonderful rebase conflict
+* fbcc586 a change from hello-git for rebase conflict. enjoy your day
+*   9ff2f04 Merge branch 'trunk' of ../hello-git into trunk
+|\  
+| * 5f5215b a change to bar
+* | 68ac697 merged in upstream
+|\| 
+| * 7b0d4a0 A + 1
+* | d308dbe A + 2
+|/  
+* 05c6c28 greatest change
+* 5385c3c upstream change 2
+* 28443b8 upstream change
+* daea46e A remote change
+* 399f77b baz
+* 241c2a0 Y
+* e768479 X
+* d10ee81 E
+* 08bee70 D
+* 07dc767 A
+```
+
+You will notice though that the `2132f47` commit is no longer a part of our history. You can still find it in the reflogs, but in resolving the conflict, that change was "lost".
+
+If we did decide to take the local change (not HEAD when doing rebase) then a change would be present and there would be a new commit as shown below:
+
+```bash
+* 7eddc31 A + 6
+* ade24b9 change from remote for a wonderful rebase conflict
+* b9cee18 A + 5
+* fbcc586 a change from hello-git for rebase conflict. enjoy your day
+*   9ff2f04 Merge branch 'trunk' of ../hello-git into trunk
+|\  
+| * 5f5215b a change to bar
+* | 68ac697 merged in upstream
+|\| 
+| * 7b0d4a0 A + 1
+* | d308dbe A + 2
+|/  
+* 05c6c28 greatest change
+* 5385c3c upstream change 2
+* 28443b8 upstream change
+* daea46e A remote change
+* 399f77b baz
+* 241c2a0 Y
+* e768479 X
+* d10ee81 E
+* 08bee70 D
+* 07dc767 A
+```
+
+#### Reuse Recorded Resolutions
+
+Because `rebase` will replay commits, if another change happened on remote and we rebased that again we will have to deal with the same conflict once again.
+
+```bash
+# Original config: C and E conflict
+  B --- D --- E   # local
+ /
+A --- C           # remote
+
+# git pull --rebase, F resolves conflict (took local change)
+        B --- D --- E --- F   # local
+       /
+A --- C                       # remote
+
+# New commit G on remote in same conflicting file as CE conflict
+        B --- D --- E --- F   # local
+       /
+A --- C --- G                 # remote
+
+# git pull --rebase, old conflict between C and E needs to be addressed when E is replayed
+              B --- D --- E --- F   # local
+             /
+A --- C --- G                       # remote
+```
+
+If only we could reuse recorded resolutions to avoid having to resolve this again.... introducing `rerere` (REuse REcorded REsolutions)
+
+To enable `rerere` run the following config command:
+
+```bash
+git config --add rerere.enabled true
+```
+
+Now the resolution that was recorded will continue to play and you don't need to resolve each time.
+
+#### Ours vs Theirs
+
+Ours is the change of the current branch 
+
+Theirs is the change of the incomming branch 
+
+Note: Remember that `rebase` checks out the branch with which you are pulling and then plays commits on top of them. So, ours is the remote branch and theirs is the local branch in that instance
+
+To select theirs or ours (not have to manually resolve changes in each and every conflicting file) you can use the following checkout command:
+
+```bash
+git checkout --ours README.md #use "ours" change
+git checkout --theirs README.md #use "theirs" change
+```
+
+It's an all or nothing selection though, so if another file was changed on `theirs`, and you selected ours, you would lose that change.
+
 ## Terms
 
 ### Commit
@@ -523,6 +733,23 @@ The log of where your HEAD has moved. Logs are stored in `.git/logs/HEAD`
 From `man git-cherry-pick`
 
 Given one or more existing commits, apply the change each one introduces, recording a new commit for each. This requires your working tree to be clean (no modifications from the HEAD commit).
+
+### Fetch
+
+Get latest changes and update remote branches
+
+### Pull
+
+Get latest changes, update remote branch in local repo, and merge those changes with current (or selected) branch if tracked
+
+### Push
+
+Put latest changes from local branch to tracked remote branch and merge them.
+
+### Stash
+
+Stack of temporary changes, used mostly to keep working tree clean as needed.
+
 
 ## Tidbits
 
