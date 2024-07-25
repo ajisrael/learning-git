@@ -676,6 +676,133 @@ git checkout --theirs README.md #use "theirs" change
 
 It's an all or nothing selection though, so if another file was changed on `theirs`, and you selected ours, you would lose that change.
 
+Note: Remember that when doing a `rebase` ours is theirs and theirs is ours. So for example if I made a change on the remote branch `hello-git` to update the README to have `A + 9` as the first line, then
+did `A + 10` on the local branch `remote-git` and then ran `git pull --rebase` to introduce the conflict, and finally resovled the conflict with `git checkout --ours README.md` I will have chosen the change from `hello-git`
+
+#### Interactive Rebase
+
+To begin an interactive rebase we need to provide a point in time to rebase with. Typically, the simplist way to do this is with `HEAD~<nubmer>`. `HEAD~1` means one commit back from `HEAD`. 
+
+```bash
+git rebase -i <commitish>
+```
+
+So `git rebase -i HEAD~3` brings us back three commits, replays them one at a time and allows us to decide how to replay them.
+
+After running the aforementioned command you will receive something like the following prompt:
+
+```bash
+pick e103942 1 to the end
+pick 127e7fa 2 to the end
+pick 0098ff3 3 to the end
+
+# Rebase ead3843..0098ff3 onto ead3843 (3 commands)
+#
+# Commands:
+# p, pick <commit> = use commit
+# r, reword <commit> = use commit, but edit the commit message
+# e, edit <commit> = use commit, but stop for amending
+# s, squash <commit> = use commit, but meld into previous commit
+# f, fixup [-C | -c] <commit> = like "squash" but keep only the previous
+#                    commit's log message, unless -C is used, in which case
+#                    keep only this commit's message; -c is same as -C but
+#                    opens the editor
+# x, exec <command> = run command (the rest of the line) using shell
+# b, break = stop here (continue rebase later with 'git rebase --continue')
+# d, drop <commit> = remove commit
+# l, label <label> = label current HEAD with a name
+# t, reset <label> = reset HEAD to a label
+# m, merge [-C <commit> | -c <commit>] <label> [# <oneline>]
+#         create a merge commit using the original merge commit's
+#         message (or the oneline, if no original merge commit was
+#         specified); use -c <commit> to reword the commit message
+# u, update-ref <ref> = track a placeholder for the <ref> to be updated
+#                       to this position in the new commits. The <ref> is
+#                       updated at the end of the rebase
+#
+# These lines can be re-ordered; they are executed from top to bottom.
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+#
+# However, if you remove everything, the rebase will be aborted.
+```
+
+Here you can see the commands that we would like to apply to each commit. By default they are given `pick`. If we wanted to squash the commits into a single commit then we would chang the second and third commands to be `s`
+
+```bash
+pick e103942 1 to the end
+s 127e7fa 2 to the end
+s 0098ff3 3 to the end
+```
+
+You are able to make these changes because of the `-i` in the rebase command. This is the interactive part. After saving the file you will be prompted with all three commit messages by default, as shown below:
+
+```bash
+# This is a combination of 3 commits.
+# This is the 1st commit message:
+
+1 to the end
+
+# This is the commit message #2:
+
+2 to the end
+
+# This is the commit message #3:
+
+3 to the end
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Thu Jul 25 14:01:18 2024 -0400
+#
+# interactive rebase in progress; onto ead3843
+# Last commands done (3 commands done):
+#    squash 127e7fa 2 to the end
+#    squash 0098ff3 3 to the end
+# No commands remaining.
+# You are currently rebasing branch 'trunk' on 'ead3843'.
+#
+# Changes to be committed:
+#       modified:   README.md
+#
+```
+
+To change this to one single commit, edit the beginning to look like the following:
+
+```bash
+# This is a combination of 3 commits.
+# This is the 1st commit message:
+
+1 through 3 to the end
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Thu Jul 25 14:01:18 2024 -0400
+#
+# interactive rebase in progress; onto ead3843
+# Last commands done (3 commands done):
+#    squash 127e7fa 2 to the end
+#    squash 0098ff3 3 to the end
+# No commands remaining.
+# You are currently rebasing branch 'trunk' on 'ead3843'.
+#
+# Changes to be committed:
+#       modified:   README.md
+#
+```
+
+Then when you check your `git log` you will only see the squashed commit, not the 3 individual ones that were preveously there.
+
+### Tools and Techniques
+
+For lessons in this section you will need to clone a repo with the following command:
+
+```bash
+git clone git@github.com:ThePrimeagen/git-bisect.git
+```
+
 ## Terms
 
 ### Commit
