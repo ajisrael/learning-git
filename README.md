@@ -1,5 +1,7 @@
 # Learning Git
 
+Based on front end masters course by Primeagen: https://theprimeagen.github.io/fem-git/lessons/intro/intro
+
 ## Commands
 
 ### Basics
@@ -802,6 +804,184 @@ For lessons in this section you will need to clone a repo with the following com
 ```bash
 git clone git@github.com:ThePrimeagen/git-bisect.git
 ```
+
+#### Searching through Git Logs
+
+You can search through git logs with `grep`
+
+```bash
+git log --grep <search-term>
+```
+
+This will just show the commits and their messages. You can add a `-p` flag to see the changes.
+
+```bash
+git log --grep <search-term> -p
+```
+
+You can also search the logs for changes with specific files
+
+```bash
+git log -p -- src/index.js
+```
+
+Note: The `--` is important. This is what specifies that the next entry is a list of files to search for.
+
+#### Bisect
+
+Log searching has a large "luck" factor, bisect allows us to search through the repository for the offending commit that changed the code.
+
+You need the following to be true to perform `bisect`:
+1. All commits are ordered. They are ordered by time.
+2. You know a commit that the issue is not present in (or be able to find it easily enough). Distance between current and past commit without issue doesn't matter, just so long as you have one.
+
+How to use it:
+
+Start git bisect:
+
+```bash
+git bisect start
+```
+
+Set the known bad commit (blank uses the current commit)
+
+```bash
+git bisect bad
+```
+
+Set the known good commit
+
+```bash
+git bisect good <commit>
+```
+
+Test each checkout, and tell bisect if it is good or bad
+
+```bash
+git bisect <good | bad>
+```
+
+Repeat testing until git tells you the commit where things went wrong.
+
+Should look something like the following:
+
+```bash
+3798398f377cd1722284ff30b211e3b66e218738 is the first bad commit
+commit 3798398f377cd1722284ff30b211e3b66e218738 (HEAD)
+Author: mpaulson <mpaulson@netflix.com>
+Date:   Fri Feb 16 13:20:16 2024 -0700
+
+    feat: altered foo to meet new specifications
+
+ src/index.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+You can automate it though. To follow the example you will need to reset bisect
+
+```bash
+git bisect reset
+```
+
+Then walk through the setup commands again and end with the following command for the example:
+
+```bash
+git bisect run ./node_modules/.bin/vitest --run
+```
+
+#### Revert
+
+Creates a commit that does the opposite of what you did
+
+```bash
+git revert <commit-ish>
+```
+
+You may need to resolve conflicts, just specify the file in the state you want it, add it and run `git revert --continue` to complete your reverted commit.
+
+#### Reset
+
+Soft reset: walk back a commit and add the changes from said commit to your working tree/index
+
+```bash
+git reset --soft HEAD~1
+```
+
+Obviously you can set this to be whatever `commit-ish` you want, but `HEAD~1` is a common use case
+
+You can kind of do the same thing with `commit --amend` or `commit --amend --no-edit` which will apply your current changes to your current commit that you're on. (No edit makes it so you don't change the message)
+
+Hard reset: will destroy all working tree changes and index changes. So any newly tracked files that are staged but not commited will be completely lost
+
+```bash
+git reset --hard
+```
+
+You can also pass a `commit-ish` to walk back to a previous commit, but the changes will not be in the index or working tree.
+
+#### Worktrees
+
+Each branch of a repo is a separate directory, allowing you to switch between them without having to stash chagnes and whatnot.
+
+Create a new worktree
+
+```bash
+git worktree add ../foo-bar
+```
+
+List worktrees
+
+```bash
+git worktree list
+```
+
+Remove worktree
+
+```bash
+rm -rf ../foo-bar
+git worktree prune ../foo-bar # you can see if it's prunable in the worktree list
+```
+
+or      
+
+```bash
+git worktree remove ../foo-bar
+```
+
+#### Tags & Other Tools
+
+Tags are an immutable point in history (Named locations within Git History)
+
+Main use is for versions
+
+Commands:
+
+Create
+
+```bash
+git tag <name>
+```
+
+Delete
+
+```bash
+git tag -d <name>
+```
+
+List
+
+```bash
+git tag 
+```
+
+Checkout a tag
+
+```bash
+git checkout <tagname>
+```
+
+#### Fugitive
+Vim plugin for git intigration
 
 ## Terms
 
